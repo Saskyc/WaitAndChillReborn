@@ -1,4 +1,4 @@
-# WaitAndChillReborn
+# WaitAndChillReborn ![img](https://img.shields.io/github/downloads/Saskyc/WaitAndChillReborn/total?style=for-the-badge)
 
 Remake of this plugin: https://github.com/TruthfullyHonest/WaitAndChill
 
