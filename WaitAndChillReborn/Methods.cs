@@ -1,4 +1,6 @@
-﻿namespace WaitAndChillReborn
+﻿using Exiled.API.Features.Doors;
+
+namespace WaitAndChillReborn
 {
     using System.Collections.Generic;
     using System.Linq;
@@ -21,8 +23,8 @@
             {
                 StringBuilder stringBuilder = NorthwoodLib.Pools.StringBuilderPool.Shared.Rent();
 
-                if (WaitAndChillReborn.Singleton.Config.HintVertPos != 0 && WaitAndChillReborn.Singleton.Config.HintVertPos < 0)
-                    for (int i = WaitAndChillReborn.Singleton.Config.HintVertPos; i < 0; i++)
+                if (WaitAndChillReborn.Instance.Config.HintVertPos != 0 && WaitAndChillReborn.Instance.Config.HintVertPos < 0)
+                    for (int i = WaitAndChillReborn.Instance.Config.HintVertPos; i < 0; i++)
                         stringBuilder.Append("\n");
 
                 stringBuilder.Append(Translation.TopMessage);
@@ -45,15 +47,15 @@
 
                 stringBuilder.Replace("{players}", Player.List.Any() ? $"{Player.List.Count()} {Translation.OnePlayerConnected}" : $"{Player.List.Count()} {Translation.XPlayersConnected}");
 
-                if (WaitAndChillReborn.Singleton.Config.HintVertPos != 0 && WaitAndChillReborn.Singleton.Config.HintVertPos > 0)
-                    for (int i = 0; i < WaitAndChillReborn.Singleton.Config.HintVertPos; i++)
+                if (WaitAndChillReborn.Instance.Config.HintVertPos != 0 && WaitAndChillReborn.Instance.Config.HintVertPos > 0)
+                    for (int i = 0; i < WaitAndChillReborn.Instance.Config.HintVertPos; i++)
                         stringBuilder.Append("\n");
 
                 string text = NorthwoodLib.Pools.StringBuilderPool.Shared.ToStringReturn(stringBuilder);
                 
                 foreach (Player player in Player.List)
                 {
-                    if (WaitAndChillReborn.Singleton.Config.UseHints)
+                    if (WaitAndChillReborn.Instance.Config.UseHints)
                         player.ShowHint(text, 1.1f);
                     else
                         player.Broadcast(1, text);
@@ -77,12 +79,6 @@
             if (Config.LobbyRoom.Contains("TOWER5")) LobbyAvailableSpawnPoints.Add(new Vector3(44.137f, 1013.065f, -50.931f));
             if (Config.LobbyRoom.Contains("NUKE_SURFACE")) LobbyAvailableSpawnPoints.Add(new Vector3(29.69f, 991.86f, -26.7f));
             
-            if (Config.LobbyRoom.Contains("WC"))
-                foreach (Transform transform in ItemSpawnpoint.RandomInstances.First(x => x.name == "Random Keycard")._positionVariants)
-                    LobbyAvailableSpawnPoints.Add(transform.position + Vector3.up);
-
-            if (Config.LobbyRoom.Contains("GR18"))
-                LobbyAvailableSpawnPoints.Add(ItemSpawnpoint.RandomInstances.First(x => x.name == "COM-15" && x.TriggerDoorName == "GR18")._positionVariants.First().position + Vector3.up);
             
             Dictionary<RoomType, string> roomToString = new ()
             {
@@ -113,10 +109,7 @@
 
                 Scp079sDoors(true);
             }
-
-            if (Config.LobbyRoom.Contains("096"))
-                LobbyAvailableSpawnPoints.Add(ItemSpawnpoint.AutospawnInstances.First(x => x.AutospawnItem == ItemType.KeycardNTFLieutenant).transform.position + Vector3.up);
-
+            
             Dictionary<string, RoleTypeId> stringToRole = new()
             {
                 { "049", RoleTypeId.Scp049 },
@@ -148,8 +141,8 @@
                 controlRoomDoor.IsOpen = state;
         }
 
-        private static readonly Translation Translation = WaitAndChillReborn.Singleton.Translation;
-        private static readonly LobbyConfig Config = WaitAndChillReborn.Singleton.Config.LobbyConfig;
+        private static readonly Translation Translation = WaitAndChillReborn.Instance.Translation;
+        private static readonly LobbyConfig Config = WaitAndChillReborn.Instance.Config.LobbyConfig;
     }
 }
 

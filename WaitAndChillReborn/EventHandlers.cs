@@ -35,8 +35,7 @@
             PlayerEvent.Spawned += OnSpawned;
             PlayerEvent.Dying += OnDying;
             PlayerEvent.Died += OnDied;
-
-            MapEvent.PlacingBlood += OnDeniableEvent;
+            
             PlayerEvent.SpawningRagdoll += OnDeniableEvent;
             PlayerEvent.IntercomSpeaking += OnDeniableEvent;
             PlayerEvent.DroppingItem += OnDeniableEvent;
@@ -60,8 +59,7 @@
             PlayerEvent.Spawned -= OnSpawned;
             PlayerEvent.Dying -= OnDying;
             PlayerEvent.Died -= OnDied;
-
-            MapEvent.PlacingBlood -= OnDeniableEvent;
+            
             PlayerEvent.SpawningRagdoll -= OnDeniableEvent;
             PlayerEvent.IntercomSpeaking -= OnDeniableEvent;
             PlayerEvent.DroppingItem -= OnDeniableEvent;
@@ -79,7 +77,7 @@
 
         private static void OnWaitingForPlayers()
         {
-            if (!WaitAndChillReborn.Singleton.Config.DisplayWaitingForPlayersScreen)
+            if (!WaitAndChillReborn.Instance.Config.DisplayWaitingForPlayersScreen)
                 GameObject.Find("StartRound").transform.localScale = Vector3.zero;
 
             if (LobbyTimer.IsRunning)
@@ -88,7 +86,7 @@
             if (Server.FriendlyFire)
                 FriendlyFireConfig.PauseDetector = true;
 
-            if (WaitAndChillReborn.Singleton.Config.DisplayWaitMessage)
+            if (WaitAndChillReborn.Instance.Config.DisplayWaitMessage)
                 LobbyTimer = Timing.RunCoroutine(Methods.LobbyTimer());
 
             Scp173Role.TurnedPlayers.Clear();
@@ -137,11 +135,9 @@
                     {
                         ev.Player.Role.Set(Config.RolesToChoose[Random.Range(0, Config.RolesToChoose.Count)]);
 
-                        if (Config.TurnedPlayers)
-                        {
-                            Scp096Role.TurnedPlayers.Add(ev.Player);
-                            Scp173Role.TurnedPlayers.Add(ev.Player);
-                        }
+                        if (!Config.TurnedPlayers) return;
+                        Scp096Role.TurnedPlayers.Add(ev.Player);
+                        Scp173Role.TurnedPlayers.Add(ev.Player);
                     });
             }
         }
@@ -276,6 +272,6 @@
         }
 
         private static readonly HashSet<Pickup> LockedPickups = new();
-        private static readonly LobbyConfig Config = WaitAndChillReborn.Singleton.Config.LobbyConfig;
+        private static readonly LobbyConfig Config = WaitAndChillReborn.Instance.Config.LobbyConfig;
     }
 }

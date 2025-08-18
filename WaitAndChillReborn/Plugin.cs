@@ -1,25 +1,19 @@
-﻿namespace WaitAndChillReborn
-{
-    using System;
-    using Exiled.API.Features;
-    using HarmonyLib;
-    using Configs;
-    using Config = global::WaitAndChillReborn.Configs.Config;
+﻿global using Config = WaitAndChillReborn.Configs.Config;
+using System;
+using Exiled.API.Features;
+using WaitAndChillReborn.Configs;
 
+namespace WaitAndChillReborn
+{
     public class WaitAndChillReborn : Plugin<Config, Translation>
     {
-        public static WaitAndChillReborn Singleton;
-
-        private Harmony _harmony;
+        public static WaitAndChillReborn Instance;
 
         public override void OnEnabled()
         {
-            Singleton = this;
+            Instance = this;
             
             EventHandlers.RegisterEvents();
-            
-            _harmony = new Harmony($"michal78900.wacr-{DateTime.Now.Ticks}");
-            _harmony.PatchAll();
 
             base.OnEnabled();
         }
@@ -28,14 +22,14 @@
         {
             EventHandlers.UnRegisterEvents();
 
-            Singleton = null;
+            Instance = null;
 
             base.OnDisabled();
         }
 
         public override string Name => "WaitAndChillReborn";
         public override string Author => "Michal78900";
-        public override Version Version => new Version(5, 0, 1);
-        public override Version RequiredExiledVersion => new Version(7, 0, 5);
+        public override Version Version => new Version(5, 1, 0);
+        public override Version RequiredExiledVersion => new Version(9, 8, 1);
     }
 }
