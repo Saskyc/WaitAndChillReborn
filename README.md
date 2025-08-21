@@ -25,7 +25,6 @@ Remake of this plugin: https://github.com/TruthfullyHonest/WaitAndChill
 - GATE_A
 - GATE_B
 - INTERCOM
-- 079
 - 096
 - 106
 - 173
