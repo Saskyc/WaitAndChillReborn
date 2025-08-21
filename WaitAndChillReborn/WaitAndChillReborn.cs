@@ -29,7 +29,7 @@ namespace WaitAndChillReborn
 
         public override string Name => "WaitAndChillReborn";
         public override string Author => "Michal78900";
-        public override Version Version => new Version(5, 1, 0);
+        public override Version Version => new Version(5, 2, 0);
         public override Version RequiredExiledVersion => new Version(9, 8, 1);
     }
 }
