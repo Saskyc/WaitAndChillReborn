@@ -20,7 +20,6 @@
             "SHELTER",
             "GR18",
             "049",
-            "079",
             "106",
             "173",
             "939",
@@ -32,11 +31,8 @@
             new Vector3(-1f, -1f, -1f),
         };
 
-        [Description("Whether plugin should use all of lobby rooms on the list instead only one. Player when they join will be teleported to the random lobby room.")]
-        public bool MultipleRooms { get; private set; } = false;
-
         [Description("The time (in seconds) between player joining on the server and him changing role while in lobby (change this number if some players aren't spawned / are spawned as a None class.")]
-        public float SpawnDelay { get; private set; } = 0.25f;
+        public float SpawnDelay { get; private set; } = 1f;
 
         [Description("List of roles which players can spawn as:")]
         public List<RoleTypeId> RolesToChoose { get; private set; } = new()

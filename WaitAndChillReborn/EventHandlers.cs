@@ -1,4 +1,6 @@
-﻿namespace WaitAndChillReborn
+﻿using Exiled.API.Features;
+
+namespace WaitAndChillReborn
 {
     using System.Collections.Generic;
     using Configs;
@@ -25,16 +27,14 @@
     using Scp106Event = Exiled.Events.Handlers.Scp106;
     using Server = Exiled.API.Features.Server;
 
-    internal static class EventHandlers
+    public static class EventHandlers
     {
-        internal static void RegisterEvents()
+        public static Vector3? MapChosen = null;
+        
+        public static void RegisterEvents()
         {
             ServerEvent.WaitingForPlayers += OnWaitingForPlayers;
-
             PlayerEvent.Verified += OnVerified;
-            PlayerEvent.Spawned += OnSpawned;
-            PlayerEvent.Dying += OnDying;
-            PlayerEvent.Died += OnDied;
             
             PlayerEvent.SpawningRagdoll += OnDeniableEvent;
             PlayerEvent.IntercomSpeaking += OnDeniableEvent;
@@ -47,18 +47,15 @@
 
             // Scp106Event.CreatingPortal += OnDeniableEvent;
             Scp106Event.Teleporting += OnDeniableEvent;
-
             ServerEvent.RoundStarted += OnRoundStarted;
+            ServerEvent.OnRoundStarted();
         }
 
-        internal static void UnRegisterEvents()
+        public static void UnRegisterEvents()
         {
             ServerEvent.WaitingForPlayers -= OnWaitingForPlayers;
 
             PlayerEvent.Verified -= OnVerified;
-            PlayerEvent.Spawned -= OnSpawned;
-            PlayerEvent.Dying -= OnDying;
-            PlayerEvent.Died -= OnDied;
             
             PlayerEvent.SpawningRagdoll -= OnDeniableEvent;
             PlayerEvent.IntercomSpeaking -= OnDeniableEvent;
@@ -75,156 +72,29 @@
             ServerEvent.RoundStarted -= OnRoundStarted;
         }
 
-        private static void OnWaitingForPlayers()
+        public static void OnWaitingForPlayers()
         {
-            if (!WaitAndChillReborn.Instance.Config.DisplayWaitingForPlayersScreen)
-                GameObject.Find("StartRound").transform.localScale = Vector3.zero;
+            var startRound = GameObject.Find("StartRound");
+            if (startRound.TryGetComponent<Setuped>(out var setuped)) return;
+            startRound.AddComponent<Setuped>();
+        }
+        
+        public static void OnVerified(VerifiedEventArgs ev)
+        {
+            var startRound = GameObject.Find("StartRound");
+            if (startRound is not null && !startRound.TryGetComponent<Setuped>(out var setuped))
+                startRound.AddComponent<Setuped>();
 
-            if (LobbyTimer.IsRunning)
-                Timing.KillCoroutines(LobbyTimer);
-
-            if (Server.FriendlyFire)
-                FriendlyFireConfig.PauseDetector = true;
-
-            if (WaitAndChillReborn.Instance.Config.DisplayWaitMessage)
-                LobbyTimer = Timing.RunCoroutine(Methods.LobbyTimer());
-
-            Scp173Role.TurnedPlayers.Clear();
-            Scp096Role.TurnedPlayers.Clear();
-
-            Timing.CallDelayed(0.1f, Methods.SetupAvailablePositions);
-
-            Timing.CallDelayed(
-                1f,
-                () =>
-                {
-                    LockedPickups.Clear();
-
-                    foreach (Pickup pickup in Pickup.List)
-                    {
-                        try
-                        {
-                            if (!pickup.IsLocked)
-                            {
-                                PickupSyncInfo info = pickup.Base.NetworkInfo;
-                                info.Locked = true;
-                                pickup.Base.NetworkInfo = info;
-
-                                pickup.Base.GetComponent<Rigidbody>().isKinematic = true;
-                                LockedPickups.Add(pickup);
-                            }
-                        }
-                        catch (System.Exception)
-                        {
-                            // ignored
-                        }
-                    }
-                });
+            ev.Player.GameObject.AddComponent<PlayerLobby>();
         }
 
-        private static void OnVerified(VerifiedEventArgs ev)
-        {
-            if (!IsLobby)
-                return;
-
-            if (RoundStart.singleton.NetworkTimer > 1 || RoundStart.singleton.NetworkTimer == -2)
-            {
-                Timing.CallDelayed(
-                    Config.SpawnDelay,
-                    () =>
-                    {
-                        ev.Player.Role.Set(Config.RolesToChoose[Random.Range(0, Config.RolesToChoose.Count)]);
-
-                        if (!Config.TurnedPlayers) return;
-                        Scp096Role.TurnedPlayers.Add(ev.Player);
-                        Scp173Role.TurnedPlayers.Add(ev.Player);
-                    });
-            }
-        }
-
-        private static void OnSpawned(SpawnedEventArgs ev)
-        {
-            if (!IsLobby)
-                return;
-
-            if (RoundStart.singleton.NetworkTimer <= 1 && RoundStart.singleton.NetworkTimer != -2)
-                return;
-
-            ev.Player.Position = Config.MultipleRooms switch
-            {
-                true => LobbyAvailableSpawnPoints[Random.Range(0, LobbyAvailableSpawnPoints.Count)],
-                false => LobbyChoosedSpawnPoint
-            };
-
-            _ = !Config.MultipleRooms ? ev.Player.Position = LobbyChoosedSpawnPoint : ev.Player.Position = LobbyAvailableSpawnPoints[Random.Range(0, LobbyAvailableSpawnPoints.Count)];
-
-            Timing.CallDelayed(
-                0.3f,
-                () =>
-                {
-                    Exiled.CustomItems.API.Extensions.ResetInventory(ev.Player, Config.Inventory);
-
-                    foreach (KeyValuePair<AmmoType, ushort> ammo in Config.Ammo)
-                        ev.Player.Ammo[ammo.Key.GetItemType()] = ammo.Value;
-
-                    foreach (KeyValuePair<EffectType, byte> effect in Config.LobbyEffects)
-                    {
-                        if (!ev.Player.TryGetEffect(effect.Key, out StatusEffectBase? effectBase))
-                            continue;
-
-                        effectBase.ServerSetState(effect.Value, float.MaxValue);
-                    }
-                });
-        }
-
-        private static void OnDeniableEvent(IExiledEvent ev)
+        public static void OnDeniableEvent(IExiledEvent ev)
         {
             if (IsLobby && ev is IDeniableEvent deniableEvent)
                 deniableEvent.IsAllowed = false;
         }
-
-        private static void OnDying(DyingEventArgs ev)
-        {
-            if (IsLobby)
-                ev.Player.ClearInventory();
-        }
-
-        private static void OnDied(DiedEventArgs ev)
-        {
-            if (!IsLobby || (RoundStart.singleton.NetworkTimer <= 1 && RoundStart.singleton.NetworkTimer != -2))
-                return;
-
-            Timing.CallDelayed(Config.SpawnDelay, () => ev.Player.Role.Set(Config.RolesToChoose[Random.Range(0, Config.RolesToChoose.Count)]));
-
-            Timing.CallDelayed(
-                Config.SpawnDelay * 2.5f,
-                () =>
-                {
-                    ev.Player.Position = Config.MultipleRooms switch
-                    {
-                        true => LobbyAvailableSpawnPoints[Random.Range(0, LobbyAvailableSpawnPoints.Count)],
-                        false => LobbyChoosedSpawnPoint
-                    };
-
-                    foreach (KeyValuePair<EffectType, byte> effect in Config.LobbyEffects)
-                    {
-                        ev.Player.EnableEffect(effect.Key);
-                        ev.Player.ChangeEffectIntensity(effect.Key, effect.Value);
-                    }
-
-                    Timing.CallDelayed(
-                        0.3f,
-                        () =>
-                        {
-                            Exiled.CustomItems.API.Extensions.ResetInventory(ev.Player, Config.Inventory);
-
-                            foreach (KeyValuePair<AmmoType, ushort> ammo in Config.Ammo)
-                                ev.Player.Ammo[ammo.Key.GetItemType()] = ammo.Value;
-                        });
-                });
-        }
-
-        private static void OnRoundStarted()
+        
+        public static void OnRoundStarted()
         {
             foreach (ThrownProjectile throwable in Object.FindObjectsOfType<ThrownProjectile>())
             {
@@ -247,11 +117,6 @@
             if (Server.FriendlyFire)
                 FriendlyFireConfig.PauseDetector = false;
 
-            Methods.Scp079sDoors(false);
-
-            if (LobbyTimer.IsRunning)
-                Timing.KillCoroutines(LobbyTimer);
-
             foreach (Pickup pickup in LockedPickups)
             {
                 try
@@ -271,7 +136,7 @@
             LockedPickups.Clear();
         }
 
-        private static readonly HashSet<Pickup> LockedPickups = new();
-        private static readonly LobbyConfig Config = WaitAndChillReborn.Instance.Config.LobbyConfig;
+        public static readonly HashSet<Pickup> LockedPickups = new();
+        public static readonly LobbyConfig Config = WaitAndChillReborn.Instance.Config.LobbyConfig;
     }
 }
